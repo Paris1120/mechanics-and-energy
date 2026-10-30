@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Physics Simulation | 물리 기반 궤도 계산기</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  </head>
+  <body>
+    <div class="app">
+      <!-- ================= 사이드바 (휴대폰에서는 하단 탭바) ================= -->
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-logo">ↆ</div>
+          <div class="brand-text">
+            <strong>Physics Simulation</strong>
+            <span>물리 기반 궤도 계산기</span>
+          </div>
+        </div>
+
+        <div class="nav-label">MENU</div>
+        <nav class="nav">
+          <button
+            class="nav-item active"
+            data-view="calculator"
+            title="궤도 계산기"
+          >
+            <svg viewBox="0 0 24 24">
+              <path d="M3 20C5 8 15 4 21 20" />
+              <circle cx="16" cy="10" r="1.8" />
+            </svg>
+            <span>궤도 계산기</span>
+          </button>
+          <button class="nav-item" data-view="results" title="계산 결과">
+            <svg viewBox="0 0 24 24">
+              <rect x="4" y="3.5" width="16" height="17" rx="3" />
+              <path d="M8 9h8M8 13h8M8 17h5" />
+            </svg>
+            <span>계산 결과</span>
+          </button>
+          <button class="nav-item" data-view="graphs" title="그래프">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 4v16h16" />
+              <path d="M7.5 15l4-5 3 3 5-6" />
+            </svg>
+            <span>그래프</span>
+          </button>
+          <button class="nav-item" data-view="solution" title="수식 풀이">
+            <svg viewBox="0 0 24 24"><path d="M17 5H7l6 7-6 7h10" /></svg>
+            <span>수식 풀이</span>
+          </button>
+          <button class="nav-item" data-view="team" title="팀 소개">
+            <svg viewBox="0 0 24 24">
+              <circle cx="9" cy="8" r="3" />
+              <path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" />
+              <circle cx="17" cy="9" r="2.4" />
+              <path d="M16 14.6c2.8.2 5 2 5 5" />
+            </svg>
+            <span>팀 소개</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="avatar">T</div>
+          <div class="footer-text">
+            <strong>밀양고등학교 2학년</strong>
+            <span>역학과 에너지 수행평가</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ================= 메인 ================= -->
+      <main class="main">
+        <header class="topbar">
+          <div class="topbar-logo">Φ</div>
+          <h1 id="page-title">궤도 계산기</h1>
+          <span class="status" id="status">계산 전</span>
+        </header>
+
+        <div class="views">
+          <!-- ========== 궤도 계산기 ========== -->
+          <section class="view fit active" id="view-calculator">
+            <div class="calc">
+              <div class="calc-main">
+                <!-- 시뮬레이션 -->
+                <div class="card sim-card">
+                  <div class="sim-head">
+                    <div class="card-title sim-title">실시간 시뮬레이션</div>
+                    <div class="live">
+                      <span>X <b id="live-x">0.00</b>m</span>
+                      <span>Y <b id="live-y">0.00</b>m</span>
+                      <span>v <b id="live-v">0.00</b>m/s</span>
+                    </div>
+                    <div class="head-actions">
+                      <span class="badge" id="drag-badge">공기저항 OFF</span>
+                      <button class="btn-ghost" id="btn-vectors" type="button">
+                        벡터 ON
+                      </button>
+                      <button
+                        class="btn-icon"
+                        id="btn-reset"
+                        type="button"
+                        title="처음으로"
+                      >
+                        <svg viewBox="0 0 24 24">
+                          <path d="M4 12a8 8 0 1 0 2.4-5.7" />
+                          <path d="M4 4v5h5" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="canvas-wrap" id="canvas-wrap">
+                    <canvas id="sim-canvas"></canvas>
+                    <div class="placeholder" id="placeholder">
+                      조건을 입력하고 계산하기를 눌러주세요
+                    </div>
+                  </div>
+
+                  <div class="legend">
+                    <span><i class="lg lg-main"></i>계산된 궤적</span>
+                    <span id="lg-ideal" class="hidden"
+                      ><i class="lg lg-ideal"></i>공기저항 없을 때</span
+                    >
+                    <span id="lg-alt" class="hidden"
+                      ><i class="lg lg-alt"></i>다른 가능 각도</span
+                    >
+                    <span id="lg-vec">
+                      <i class="lg lg-v"></i>속도 v
+                      <i class="lg lg-vx"></i>v<sub>x</sub>
+                      <i class="lg lg-vy"></i>v<sub>y</sub>
+                    </span>
+                  </div>
+
+                  <div class="player">
+                    <button
+                      class="play-btn"
+                      id="btn-play"
+                      type="button"
+                      aria-label="재생"
+                    ></button>
+                    <input
+                      type="range"
+                      id="timeline"
+                      min="0"
+                      max="1000"
+                      value="0"
+                    />
+                    <span class="time" id="time-label">0.00s</span>
+                    <button
+                      class="btn-ghost small"
+                      id="btn-speed"
+                      type="button"
+                      title="재생 속도"
+                    >
+                      1x
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 하단 탭 패널 -->
+                <div class="card dock">
+                  <div class="dock-head">
+                    <div class="seg" id="dock-tabs">
+                      <button
+                        class="seg-btn tab-inputs"
+                        type="button"
+                        data-pane="inputs"
+                      >
+                        입력
+                      </button>
+                      <button
+                        class="seg-btn active"
+                        type="button"
+                        data-pane="results"
+                      >
+                        결과
+                      </button>
+                      <button class="seg-btn" type="button" data-pane="chart">
+                        그래프
+                      </button>
+                      <button class="seg-btn" type="button" data-pane="eq">
+                        수식
+                      </button>
+                    </div>
+                  </div>
+                  <div class="dock-body">
+                    <div class="pane" id="pane-inputs"></div>
+
+                    <div class="pane active" id="pane-results">
+                      <div class="message hidden" id="message"></div>
+                      <div class="result-grid dense" id="result-grid"></div>
+                    </div>
+
+                    <div class="pane pane-fill" id="pane-chart">
+                      <div class="seg small" id="chart-tabs">
+                        <button
+                          class="seg-btn active"
+                          type="button"
+                          data-chart="height"
+                        >
+                          높이-시간
+                        </button>
+                        <button
+                          class="seg-btn"
+                          type="button"
+                          data-chart="velocity"
+                        >
+                          속도-시간
+                        </button>
+                        <button
+                          class="seg-btn"
+                          type="button"
+                          data-chart="energy"
+                        >
+                          에너지-시간
+                        </button>
+                        <button
+                          class="seg-btn"
+                          type="button"
+                          data-chart="trajectory"
+                        >
+                          궤적
+                        </button>
+                      </div>
+                      <div class="chart-box">
+                        <canvas id="chart-dock"></canvas>
+                      </div>
+                    </div>
+
+                    <div class="pane" id="pane-eq">
+                      <div class="eq-grid" id="eq-view"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 입력창 (휴대폰에서는 '입력' 탭으로 자동 이동) -->
+              <div class="card calc-side" id="side-slot">
+                <form class="params" id="input-form" novalidate>
+                  <div class="form-scroll">
+                    <div class="card-title">입력 ( Input )</div>
+
+                    <div class="group">
+                      <div class="group-title">위치 / 환경</div>
+                      <label class="field"
+                        ><span>목표 거리 (m)</span>
+                        <input
+                          type="number"
+                          id="in-distance"
+                          value="20"
+                          min="0.1"
+                          step="any"
+                          inputmode="decimal"
+                      /></label>
+                      <div class="row-2">
+                        <label class="field"
+                          ><span>목표 높이 (m)</span>
+                          <input
+                            type="number"
+                            id="in-target-h"
+                            value="0"
+                            min="0"
+                            step="any"
+                            inputmode="decimal"
+                        /></label>
+                        <label class="field"
+                          ><span>발사 지면 높이 (m)</span>
+                          <input
+                            type="number"
+                            id="in-ground-h"
+                            value="0"
+                            min="0"
+                            step="any"
+                            inputmode="decimal"
+                        /></label>
+                      </div>
+                      <label class="field"
+                        ><span>중력 가속도</span>
+                        <select id="in-gravity-preset">
+                          <option value="9.81">지구 (9.81 m/s²)</option>
+                          <option value="1.62">달 (1.62 m/s²)</option>
+                          <option value="3.71">화성 (3.71 m/s²)</option>
+                          <option value="24.79">목성 (24.79 m/s²)</option>
+                          <option value="custom">직접 입력</option>
+                        </select></label
+                      >
+                      <label class="field hidden" id="field-gravity"
+                        ><span>중력 가속도 g (m/s²)</span>
+                        <input
+                          type="number"
+                          id="in-gravity"
+                          value="9.81"
+                          min="0.01"
+                          step="any"
+                          inputmode="decimal"
+                      /></label>
+                    </div>
+
+                    <div class="group">
+                      <div class="group-title">사람</div>
+                      <div class="row-2">
+                        <label class="field"
+                          ><span>키 (m)</span>
+                          <input
+                            type="number"
+                            id="in-height"
+                            value="1.75"
+                            min="0.5"
+                            max="2.5"
+                            step="any"
+                            inputmode="decimal"
+                        /></label>
+                        <label class="field"
+                          ><span>팔 가속 거리 (m)</span>
+                          <input
+                            type="number"
+                            id="in-arm"
+                            value="0.8"
+                            min="0.05"
+                            step="any"
+                            inputmode="decimal"
+                        /></label>
+                      </div>
+                      <p class="hint">
+                        발사 높이 h₀ = 지면 높이 + 키 × 0.9<br />팔 가속 거리 =
+                        던질 때 손이 물체를 밀어주는 거리
+                      </p>
+                    </div>
+
+                    <div class="group">
+                      <div class="group-title">물체</div>
+                      <label class="field"
+                        ><span>물체 종류</span>
+                        <select id="in-object">
+                          <option value="baseball">야구공</option>
+                          <option value="tennis">테니스공</option>
+                          <option value="basketball">농구공</option>
+                          <option value="soccer">축구공</option>
+                          <option value="shotput">투포환</option>
+                          <option value="pingpong">탁구공</option>
+                          <option value="custom">직접 입력</option>
+                        </select></label
+                      >
+                      <label class="field"
+                        ><span>질량 (kg)</span>
+                        <input
+                          type="number"
+                          id="in-mass"
+                          value="0.145"
+                          min="0.0001"
+                          step="any"
+                          inputmode="decimal"
+                      /></label>
+                      <div class="row-2">
+                        <label class="field"
+                          ><span>지름 (m)</span>
+                          <input
+                            type="number"
+                            id="in-diameter"
+                            value="0.074"
+                            min="0.001"
+                            step="any"
+                            inputmode="decimal"
+                        /></label>
+                        <label class="field"
+                          ><span>항력계수 C<sub>d</sub></span>
+                          <input
+                            type="number"
+                            id="in-cd"
+                            value="0.35"
+                            min="0.01"
+                            step="any"
+                            inputmode="decimal"
+                        /></label>
+                      </div>
+                    </div>
+
+                    <div class="group">
+                      <div class="group-title">계산 모드</div>
+                      <label class="field"
+                        ><span>모드</span>
+                        <select id="in-mode">
+                          <option value="min">
+                            최소 힘 모드 (최적 각도 자동)
+                          </option>
+                          <option value="angle">각도 고정 모드</option>
+                          <option value="speed">속도 고정 모드</option>
+                        </select></label
+                      >
+                      <label class="field hidden" id="field-angle"
+                        ><span>발사 각도 (°)</span>
+                        <input
+                          type="number"
+                          id="in-angle"
+                          value="45"
+                          min="-89"
+                          max="89"
+                          step="any"
+                          inputmode="decimal"
+                      /></label>
+                      <label class="field hidden" id="field-speed"
+                        ><span>초기 속도 (m/s)</span>
+                        <input
+                          type="number"
+                          id="in-speed"
+                          value="20"
+                          min="0.1"
+                          step="any"
+                          inputmode="decimal"
+                      /></label>
+                      <label class="field hidden" id="field-orbit"
+                        ><span>애니메이션 궤도</span>
+                        <select id="in-orbit">
+                          <option value="low">낮은 궤도 (직선형)</option>
+                          <option value="high">높은 궤도 (포물선형)</option>
+                        </select></label
+                      >
+                      <p class="hint" id="mode-hint"></p>
+                    </div>
+
+                    <div class="group">
+                      <div class="group-title">공기저항</div>
+                      <label class="switch-row">
+                        <span>공기저항 고려</span>
+                        <span class="switch"
+                          ><input type="checkbox" id="in-drag" /><span
+                            class="slider"
+                          ></span
+                        ></span>
+                      </label>
+                      <label class="field hidden" id="field-rho"
+                        ><span>공기 밀도 ρ (kg/m³)</span>
+                        <input
+                          type="number"
+                          id="in-rho"
+                          value="1.225"
+                          min="0.001"
+                          step="any"
+                          inputmode="decimal"
+                      /></label>
+                    </div>
+                  </div>
+
+                  <div class="form-foot">
+                    <button type="submit" class="btn-primary" id="btn-calc">
+                      계산하기
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </section>
+
+          <!-- ========== 계산 결과 ========== -->
+          <section class="view" id="view-results">
+            <div class="results-layout">
+              <div class="results-main">
+                <div class="message hidden" id="message-full"></div>
+                <div class="result-grid" id="result-grid-full"></div>
+              </div>
+              <div class="card summary-card needs-result">
+                <div class="card-title">입력 조건 요약</div>
+                <dl class="summary" id="input-summary"></dl>
+              </div>
+            </div>
+          </section>
+
+          <!-- ========== 그래프 ========== -->
+          <section class="view" id="view-graphs">
+            <div class="chart-grid">
+              <div class="card chart-card">
+                <div class="card-title">높이 - 시간</div>
+                <div class="chart-box"><canvas id="chart-height"></canvas></div>
+                <p class="chart-note" id="note-height"></p>
+                <div class="empty-overlay">
+                  궤도 계산기에서 계산하면 그래프가 표시됩니다
+                </div>
+              </div>
+              <div class="card chart-card">
+                <div class="card-title">속도 - 시간</div>
+                <div class="chart-box">
+                  <canvas id="chart-velocity"></canvas>
+                </div>
+                <p class="chart-note" id="note-velocity"></p>
+                <div class="empty-overlay">
+                  궤도 계산기에서 계산하면 그래프가 표시됩니다
+                </div>
+              </div>
+              <div class="card chart-card">
+                <div class="card-title">에너지 - 시간</div>
+                <div class="chart-box"><canvas id="chart-energy"></canvas></div>
+                <p class="chart-note" id="note-energy"></p>
+                <div class="empty-overlay">
+                  궤도 계산기에서 계산하면 그래프가 표시됩니다
+                </div>
+              </div>
+              <div class="card chart-card">
+                <div class="card-title">궤적 (x - y)</div>
+                <div class="chart-box">
+                  <canvas id="chart-trajectory"></canvas>
+                </div>
+                <p class="chart-note" id="note-trajectory"></p>
+                <div class="empty-overlay">
+                  궤도 계산기에서 계산하면 그래프가 표시됩니다
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ========== 수식 풀이 ========== -->
+          <section class="view" id="view-solution">
+            <div class="solution-grid" id="solution-view"></div>
+          </section>
+
+          <!-- ========== 팀 소개 ========== -->
+          <section class="view" id="view-team">
+            <div class="team-grid">
+              <div class="card member">
+                <div class="avatar big">1</div>
+                <strong>황찬유</strong><span>사이트 제작 및 자료 조사</span>
+              </div>
+              <div class="card member">
+                <div class="avatar big">2</div>
+                <strong>김민석</strong><span>보고서 작성 및 자료 조사</span>
+              </div>
+              <div class="card member">
+                <div class="avatar big">3</div>
+                <strong>김재민</strong><span>리더십 및 보고서 작성</span>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/physics.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>
